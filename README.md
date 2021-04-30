@@ -33,8 +33,22 @@ executables for Linux/Windows/MacOS will be written to the `bin` directory.
 The usage of the executable is
 
 ```bash
-abbyy-cloud-ocr file1 file2 file3 
+Usage: abbyy-cloud-ocr-<platform> [options] file1 [file2 [file3]...] 
+
+Sends one or more files to Abbyy Cloud OCR service and saves the processed files
+
+Options:
+  -l, --language <language>       Recognition language or comma-separated list of languages, defaults to "English"
+  -e, --export-format <format>    Output format. One of: txt (default), txtUnstructured, rtf, docx, xlsx, pptx, pdfa, pdfSearchable, pdfTextAndImages, xml
+  -c, --custom-options <options>  Other custom options passed to REST-ful call,  like 'profile=documentArchiving'
+  -o, --output-path <path>        The path to which to save the processed files'
+  -u, --service-url <url>         The http endpoint of the Cloud OCR Service
+  -i, --app-id <id>               The id of the application
+  -P, --password <password>       The application password
+  -F, --filenames                 Output the filenames of the processed and downloaded files
+  -h, --help                      display help for command
+
 ```
 
 Note that if you don't compile in your `.env` file, you need to set the environment variables defined therein
-before calling the executable. 
+before calling the executable (or provide them on the command line).
