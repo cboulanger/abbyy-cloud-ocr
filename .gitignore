@@ -1,0 +1,9 @@
+# Project exclude paths
+/node_modules/
+.env
+src/index.d.ts
+index.js
+run.js
+!.env.dist
+bin/
+.pkg-cache/

@@ -1,0 +1,48 @@
+{
+  "name": "@cboulanger/abbyy-cloud-ocr",
+  "version": "1.0.0",
+  "description": "NodeJS client and CLI to interact with the ABBYY Cloud OCR service  ",
+  "main": "src/index.js",
+  "bin": "run.js",
+  "scripts": {
+    "test": "tsc run.ts && diff test/test.txt -bB $(ts-node run.ts -F -l German -e txt test/test.pdf)",
+    "tsc": "tsc -d",
+    "prepublishOnly": "npm install && npm run tsc",
+    "publish-patch": "npm run tsc && npm version patch && npm publish --access public",
+    "publish-minor": "npm run tsc && npm version minor && npm publish --access public",
+    "postversion": "git push --follow-tags",
+    "pkg": "tsc run.ts --esModuleInterop && npx pkg ."
+  },
+  "keywords": [
+    "ocr",
+    "abbyy"
+  ],
+  "files": [
+    "README.md",
+    "src/index.js",
+    "src/index.d.ts",
+    "package.json",
+    "tsconfig.json",
+    "run.ts",
+    ".env.dist"
+  ],
+  "author": "Christian Boulanger (@cboulanger) infoy@bibliograph.org",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^7.2.0",
+    "node-fetch": "^2.6.1",
+    "xml2js": "^0.4.23"
+  },
+  "devDependencies": {
+    "eslint": "^7.25.0",
+    "@types/node": "^14.14.41",
+    "dotenv": "^8.2.0",
+    "gauge": "^2.7.4",
+    "pkg": "^5.1.0",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.4"
+  },
+  "pkg": {
+    "outputPath": "bin"
+  }
+}
