@@ -10,7 +10,6 @@ const {promisify} = require('util');
 const streamPipeline = promisify(pipeline);
 const fetch = require('node-fetch');
 
-
 export {ProcessingSettings}
 
 enum HTTP_VERBS {
@@ -103,13 +102,15 @@ export class AbbyyOcr {
    */
   private async callService(verb: HTTP_VERBS, methodName:string, params: KeyStringValueMap={}, body?:string) {
     let url = `${this.serviceUrl}/v2/${methodName}?${querystring.stringify(params)}`;
+    const auth = Buffer.from(this.appId+":"+this.password, 'utf-8').toString('base64');
     const options : any = {
       method: verb,
-      headers: { "Authorization" : `Basic ${this.appId}:${this.password}`},
+      headers: { "Authorization" : `Basic ${auth}`},
       body
     };
+    let result;
     try {
-      const result = await fetch(url, options);
+      result = await fetch(url, options);
       return await result.json();
     } catch (e) {
       // todo, see https://support.abbyy.com/hc/en-us/articles/360017326719-HTTP-status-codes-and-response-formats
@@ -167,8 +168,8 @@ export class AbbyyOcr {
   /**
    * @see https://support.abbyy.com/hc/en-us/articles/360017269900-listFinishedTasks-Method
    */
-  public async listFinishedTasks() : Promise<{tasks: string[]}> {
-    return await this.callService(HTTP_VERBS.GET, "listFinishedTasks");
+  public async listTasks() : Promise<{tasks: TaskStatusResponse[]}> {
+    return await this.callService(HTTP_VERBS.GET, "listTasks");
   }
 
   /**
@@ -179,14 +180,6 @@ export class AbbyyOcr {
     return await this.callService(HTTP_VERBS.GET, "getTaskStatus", {taskId});
   }
 
-  /**
-   * Iterates over the list of finished tasks and returns its status. For use in a `for await()` loop.
-   */
-  public async * finishedTasks() : AsyncGenerator<TaskStatusResponse> {
-    for (let taskId of (await this.listFinishedTasks()).tasks) {
-      yield await this.getTaskStatus(taskId);
-    }
-  }
 
   /**
    * Returns an async generator that can be used in a `for await ()` loop that will iterate

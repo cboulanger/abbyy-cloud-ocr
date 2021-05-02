@@ -7,7 +7,7 @@ const Gauge = require('gauge');
 
 (async () => {
 
-  let options : {
+  type OptionsType = {
     language? : string,
     exportFormat?: string,
     customOptions?: string
@@ -16,43 +16,76 @@ const Gauge = require('gauge');
     appId?: string,
     password?: string,
     filenames?: boolean
-  } = {};
+  };
 
-  options = program
-    .name("abbyy-cloud-ocr")
-    .description('Sends one or more files to Abbyy Cloud OCR service and saves the processed files')
-    .usage("[options] file1 [file2 [file3]...] ")
+  // process command
+  program
+    .command("process <files...>")
+    .description("Process the given files and download the results")
     .option("-l, --language <language>", "Recognition language or comma-separated list of languages, defaults to \"English\"")
     .option("-e, --export-format <format>", "Output format. One of: txt (default), txtUnstructured, rtf, docx, xlsx, pptx, pdfa, pdfSearchable, pdfTextAndImages, xml")
     .option("-c, --custom-options <options>", "Other custom options passed to REST-ful call,  like 'profile=documentArchiving'")
     .option("-o, --output-path <path>", "The path to which to save the processed files'")
+    .option("-F, --filenames", "Output the filenames of the processed and downloaded files")
+    .action(processFiles);
+
+  // list command
+  program
+    .command("list")
+    .description("List ongoing or finished tasks")
+    .action(list);
+
+  // general options
+  program
     .option("-u, --service-url <url>", "The http endpoint of the Cloud OCR Service")
     .option("-i, --app-id <id>", "The id of the application")
     .option("-P, --password <password>", "The application password")
-    .option("-F, --filenames", "Output the filenames of the processed and downloaded files")
-    .parse()
-    .opts() as typeof options;
 
-  const fileList = program.args;
+  // parse and start caommand!
+  await program.parseAsync();
 
-  // load environment variables from config file, if it exists, and add missing config. CLI params take precedence
-  dotenv.config();
-  options.serviceUrl = options.serviceUrl || process.env.ABBYY_SERVICE_URL;
-  options.appId = options.appId || process.env.ABBYY_APP_ID;
-  options.password = options.password || process.env.ABBYY_APP_PASSWD;
+  /**
+   * Sets up and returns the OCR client
+   * @return {AbbyyOcr}
+   */
+  function getClient(options: OptionsType) : AbbyyOcr{
+    // load environment variables from config file, if it exists, and add missing config. CLI params take precedence
+    dotenv.config();
+    options.serviceUrl = options.serviceUrl || process.env.ABBYY_SERVICE_URL;
+    options.appId = options.appId || process.env.ABBYY_APP_ID;
+    options.password = options.password || process.env.ABBYY_APP_PASSWD;
+    // set up client
+    const settings = new ProcessingSettings(options.language, options.exportFormat, options.customOptions);
+    // @ts-ignore
+    return new AbbyyOcr(options.appId, options.password, options.serviceUrl, settings);
+  }
 
-  // set up client
-  const settings = new ProcessingSettings(options.language, options.exportFormat, options.customOptions);
-  // @ts-ignore
-  const ocr = new AbbyyOcr(options.appId, options.password, options.serviceUrl, settings);
-
-  // Process!
-  for (let filePath of fileList) {
-    options.filenames || console.log("Processing " + filePath);
-    await ocr.process(filePath);
-    for await (const processedFilePath of ocr.downloadResult() ) {
-      console.info( (options.filenames ? "" : "Downloaded ") + processedFilePath);
+  /**
+   * Processes the files that are provided on the command line
+   * @param files
+   * @param options
+   */
+  async function processFiles(files : string[], options: OptionsType) : Promise<void>{
+    const ocr = getClient(options);
+    for (let filePath of files) {
+      options.filenames || console.log("Processing " + filePath);
+      await ocr.process(filePath);
+      for await (const processedFilePath of ocr.downloadResult() ) {
+        console.info( (options.filenames ? "" : "Downloaded ") + processedFilePath);
+      }
     }
+  }
+
+  async function list(options: OptionsType) {
+    const ocr = getClient(options);
+    console.log(
+      (await ocr.listTasks())
+        .tasks
+        .reduce((s : any, t) => {
+          s[t.status] = s[t.status] ? s[t.status]+1 : 1
+          return s;
+        }, {})
+    );
   }
 
 })().catch(err => {
