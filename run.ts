@@ -54,10 +54,9 @@ const Gauge = require('gauge');
     options.serviceUrl = options.serviceUrl || process.env.ABBYY_SERVICE_URL;
     options.appId = options.appId || process.env.ABBYY_APP_ID;
     options.password = options.password || process.env.ABBYY_APP_PASSWD;
-    // set up client
-    const settings = new ProcessingSettings(options.language, options.exportFormat, options.customOptions);
+
     // @ts-ignore
-    return new AbbyyOcr(options.appId, options.password, options.serviceUrl, settings);
+    return new AbbyyOcr(options.appId, options.password, options.serviceUrl);
   }
 
   /**
@@ -67,9 +66,10 @@ const Gauge = require('gauge');
    */
   async function processFiles(files : string[], options: OptionsType) : Promise<void>{
     const ocr = getClient(options);
+    const settings = new ProcessingSettings(options.language, options.exportFormat, options.customOptions);
     for (let filePath of files) {
       options.filenames || console.log("Processing " + filePath);
-      await ocr.process(filePath);
+      await ocr.process(filePath, settings);
       for await (const processedFilePath of ocr.downloadResult() ) {
         console.info( (options.filenames ? "" : "Downloaded ") + processedFilePath);
       }

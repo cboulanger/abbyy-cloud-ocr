@@ -78,7 +78,7 @@ export class AbbyyOcr {
    * @param serviceUrl
    * @param settings
    */
-  constructor(appId:string, password:string, serviceUrl:string, settings?: typeof ProcessingSettings) {
+  constructor(appId:string, password:string, serviceUrl:string) {
     if (!appId || !password || !serviceUrl) {
       throw new Error("Incomplete parameters");
     }
@@ -86,7 +86,6 @@ export class AbbyyOcr {
     this.appId = appId;
     this.password = password;
     this.serviceUrl = serviceUrl;
-    this.settings = settings || new ProcessingSettings();
     this.emitter = new EventEmitter;
     this.downloadUrls = [];
     this.fileName = "";
@@ -131,11 +130,12 @@ export class AbbyyOcr {
    * Uploads a document to the Abbyy OCR service and processes them.
    * @param {String} filePath
    */
-  async process(filePath:string) : Promise<void> {
+  async process(filePath:string, settings?: typeof ProcessingSettings) : Promise<void> {
+    settings = settings || new ProcessingSettings();
     this.fileName = path.basename(filePath);
     this.emitter.emit(AbbyyOcr.event.uploading, this.fileName);
     let taskData: typeof TaskData = await new Promise(((resolve, reject) => {
-      this.ocrsdk.processImage(filePath, this.settings, (error: Error|null, taskData: typeof TaskData) => {
+      this.ocrsdk.processImage(filePath, settings, (error: Error|null, taskData: typeof TaskData) => {
         if (error) {
           reject(error);
         } else if (!this.ocrsdk.isTaskActive(taskData)) {
