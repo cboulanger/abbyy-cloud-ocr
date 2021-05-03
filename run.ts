@@ -54,8 +54,6 @@ const Gauge = require('gauge');
     options.serviceUrl = options.serviceUrl || process.env.ABBYY_SERVICE_URL;
     options.appId = options.appId || process.env.ABBYY_APP_ID;
     options.password = options.password || process.env.ABBYY_APP_PASSWD;
-
-    // @ts-ignore
     return new AbbyyOcr(options.appId, options.password, options.serviceUrl);
   }
 
