@@ -8,20 +8,19 @@ const Gauge = require('gauge');
 (async () => {
 
   type OptionsType = {
+    appId: string,
+    password: string,
+    serviceUrl: string,
     language? : string,
     exportFormat?: string,
     customOptions?: string
     outputPath?: string,
-    serviceUrl?: string,
-    appId?: string,
-    password?: string,
     filenames?: boolean,
     finished?: boolean,
-    json?: boolean,
-    raw?: boolean
+    summary?: boolean
   };
 
-  // process command
+  // process
   program
     .command("process <files...>")
     .description("Process the given files and download the results")
@@ -32,14 +31,16 @@ const Gauge = require('gauge');
     .option("-F, --filenames", "Output the filenames of the processed and downloaded files")
     .action(processFiles);
 
-  // list command
+  // list
   program
     .command("list")
-    .description("List ongoing or finished tasks. By default, this outputs a list of available statuses and the number of documents with that status.")
-    .option("-r, --raw", "Return the response of the 'listTask' (or 'listFinishedTasks' in case of --finished). Implied --json.")
+    .description("List ongoing or finished tasks.")
+    .option("-S, --summary", "Return a summary (count) of current statuses.")
     .option("-f, --finished", "Only list finished tasks")
-    .option("-j, --json", "Return json")
     .action(list);
+
+  // info
+  program.command("info").action(info)
 
   // general options
   program
@@ -54,7 +55,7 @@ const Gauge = require('gauge');
    * Sets up and returns the OCR client
    * @return {AbbyyOcr}
    */
-  function getClient(options: OptionsType) : AbbyyOcr{
+  function createClient(options: OptionsType) : AbbyyOcr{
     // load environment variables from config file, if it exists, and add missing config. CLI params take precedence
     dotenv.config();
     options.serviceUrl = options.serviceUrl || process.env.ABBYY_SERVICE_URL;
@@ -69,31 +70,42 @@ const Gauge = require('gauge');
    * @param options
    */
   async function processFiles(files : string[], options: OptionsType) : Promise<void>{
-    const ocr = getClient(options);
+    const ocr = createClient(options);
     const settings = new ProcessingSettings(options.language, options.exportFormat, options.customOptions);
     for (let filePath of files) {
       options.filenames || console.log("Processing " + filePath);
       await ocr.process(filePath, settings);
-      for await (const processedFilePath of ocr.downloadResult() ) {
+      for await (const processedFilePath of ocr.downloadResult(options.outputPath) ) {
         console.info( (options.filenames ? "" : "Downloaded ") + processedFilePath);
       }
     }
   }
 
   /**
-   * TODO implement
-   * @param options
+   * List ongoing and/or completed tasks
+   * @param {OptionsType} options
    */
   async function list(options: OptionsType) {
-    const ocr = getClient(options);
-    //const result = await (options.finished ? ocr.listFinishedTasks() : ocr.listTasks());
-    console.log((await ocr.listTasks())
-        .tasks
-        .reduce((s : any, t) => {
-          s[t.status] = s[t.status] ? s[t.status]+1 : 1
-          return s;
-        }, {})
-    );
+    const ocr = createClient(options);
+    const {tasks} = await (options.finished ? ocr.listFinishedTasks() : ocr.listTasks());
+    let result = tasks;
+    if (options.summary) {
+      result = tasks.reduce((s : any, t) => {
+        s[t.status] = s[t.status] ? s[t.status]+1 : 1
+        return s;
+      }, {});
+    }
+    console.log(JSON.stringify(result,null, 2));
+  }
+
+  /**
+   * Output information on the current application
+   * @param {OptionsType} options
+   */
+  async function info(options: OptionsType) {
+    const ocr = createClient(options);
+    const result = await ocr.getApplicationInfo();
+    console.log(JSON.stringify(result,null, 2));
   }
 
 })().catch(err => {

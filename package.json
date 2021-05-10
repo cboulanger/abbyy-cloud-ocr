@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "bin": "run.js",
   "scripts": {
-    "test": "tsc run.ts && diff test/test.txt -bB $(ts-node run.ts -F -l German -e txt test/test.pdf)",
+    "test": "tsc run.ts && diff test/test.txt -bB $(ts-node run.ts process -F -l German -e txt test/test.pdf)",
     "tsc": "tsc -d",
     "prepublishOnly": "npm install && npm run tsc",
     "publish-patch": "npm run tsc && npm version patch && npm publish --access public",

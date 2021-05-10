@@ -13,7 +13,7 @@ const fetch = require('node-fetch');
 export {ProcessingSettings}
 
 enum HTTP_VERBS {
-  GET ="get",
+  GET = "get",
   POST = "post"
 }
 
@@ -24,7 +24,7 @@ type ErrorStruct = {
   "details"?: ErrorStruct[]
 }
 
-type TaskStatusResponse = {
+export type TaskStatusResponse = {
   "taskId": string,
   "registrationTime": string,
   "statusChangeTime": string,
@@ -35,6 +35,16 @@ type TaskStatusResponse = {
   "resultUrls": string[],
   "description": string
 }
+
+export type ApplicationInfoResponse = {
+  "id": string,
+  "displayName": string,
+  "pages": number,
+  "fields": number,
+  "expires": string,
+  "type": string
+}
+
 
 type KeyStringValueMap = {
   [key: string]: string
@@ -78,7 +88,7 @@ export class AbbyyOcr {
    * @param serviceUrl
    * @param settings
    */
-  constructor(appId:string, password:string, serviceUrl:string) {
+  constructor(appId: string, password: string, serviceUrl: string) {
     if (!appId || !password || !serviceUrl) {
       throw new Error("Incomplete parameters");
     }
@@ -99,12 +109,12 @@ export class AbbyyOcr {
    * @param body
    * @private
    */
-  private async callService(verb: HTTP_VERBS, methodName:string, params: KeyStringValueMap={}, body?:string) {
+  private async callService(verb: HTTP_VERBS, methodName: string, params: KeyStringValueMap = {}, body?: string) {
     let url = `${this.serviceUrl}/v2/${methodName}?${querystring.stringify(params)}`;
-    const auth = Buffer.from(this.appId+":"+this.password, 'utf-8').toString('base64');
-    const options : any = {
+    const auth = Buffer.from(this.appId + ":" + this.password, 'utf-8').toString('base64');
+    const options: any = {
       method: verb,
-      headers: { "Authorization" : `Basic ${auth}`},
+      headers: {"Authorization": `Basic ${auth}`},
       body
     };
     let result;
@@ -122,7 +132,7 @@ export class AbbyyOcr {
    * @param event
    * @param handler
    */
-  public on(event: string|symbol, handler: (...args: any[]) => void) {
+  public on(event: string | symbol, handler: (...args: any[]) => void) {
     this.emitter.on(event, handler)
   }
 
@@ -130,12 +140,12 @@ export class AbbyyOcr {
    * Uploads a document to the Abbyy OCR service and processes them.
    * @param {String} filePath
    */
-  async process(filePath:string, settings?: typeof ProcessingSettings) : Promise<void> {
-    settings = settings || new ProcessingSettings();
+  async process(filePath: string, settings?: typeof ProcessingSettings): Promise<void> {
+    this.settings = settings || new ProcessingSettings();
     this.fileName = path.basename(filePath);
     this.emitter.emit(AbbyyOcr.event.uploading, this.fileName);
     let taskData: typeof TaskData = await new Promise(((resolve, reject) => {
-      this.ocrsdk.processImage(filePath, settings, (error: Error|null, taskData: typeof TaskData) => {
+      this.ocrsdk.processImage(filePath, this.settings, (error: Error | null, taskData: typeof TaskData) => {
         if (error) {
           reject(error);
         } else if (!this.ocrsdk.isTaskActive(taskData)) {
@@ -146,7 +156,7 @@ export class AbbyyOcr {
     }));
     this.emitter.emit(AbbyyOcr.event.processing, this.fileName);
     taskData = await new Promise(((resolve, reject) => {
-      this.ocrsdk.waitForCompletion(taskData.id, (error: Error|null, taskData: typeof TaskData) => {
+      this.ocrsdk.waitForCompletion(taskData.id, (error: Error | null, taskData: typeof TaskData) => {
         if (error) {
           reject(error);
         } else if (taskData.status.toString() !== 'Completed') {
@@ -157,7 +167,7 @@ export class AbbyyOcr {
       });
     }));
     let urls = [];
-    for (let resultId of ["resultUrl","resultUrl2","resultUrl3"]) {
+    for (let resultId of ["resultUrl", "resultUrl2", "resultUrl3"]) {
       if (taskData[resultId]) {
         urls.push(taskData[resultId].toString());
       }
@@ -166,11 +176,19 @@ export class AbbyyOcr {
   }
 
   /**
-   * @see https://support.abbyy.com/hc/en-us/articles/360017269900-listFinishedTasks-Method
+   * @see https://support.abbyy.com/hc/en-us/articles/360017326679-listTasks-Method
    */
-  public async listTasks() : Promise<{tasks: TaskStatusResponse[]}> {
+  public async listTasks(): Promise<{ tasks: TaskStatusResponse[] }> {
     return await this.callService(HTTP_VERBS.GET, "listTasks");
   }
+
+  /**
+   * @see https://support.abbyy.com/hc/en-us/articles/360017269900-listFinishedTasks-Method
+   */
+  public async listFinishedTasks(): Promise<{ tasks: TaskStatusResponse[] }> {
+    return await this.callService(HTTP_VERBS.GET, "listFinishedTasks");
+  }
+
 
   /**
    * @see https://support.abbyy.com/hc/en-us/articles/360017269860-getTaskStatus-Method
@@ -178,6 +196,13 @@ export class AbbyyOcr {
    */
   public async getTaskStatus(taskId: string): Promise<TaskStatusResponse> {
     return await this.callService(HTTP_VERBS.GET, "getTaskStatus", {taskId});
+  }
+
+  /**
+   * @see https://support.abbyy.com/hc/en-us/articles/360017326699-getApplicationInfo-Method
+   */
+  public async getApplicationInfo(): Promise<ApplicationInfoResponse> {
+    return await this.callService(HTTP_VERBS.GET, "getApplicationInfo");
   }
 
 
@@ -189,16 +214,16 @@ export class AbbyyOcr {
    * a temporary directory is used
    * @returns {AsyncGenerator<string>}
    */
-  public async * downloadResult(targetDir?: string) : AsyncGenerator<string> {
+  public async* downloadResult(targetDir?: string): AsyncGenerator<string> {
     targetDir = targetDir || tmpdir();
-    const extensions = this.settings.exportFormat.split(",").map((format : string) : string => {
-      const ext = format.slice(0,3);
-      return ["pdf","txt"].includes(ext) ? ext : format;
-    } );
+    const extensions = this.settings.exportFormat.split(",").map((format: string): string => {
+      const ext = format.slice(0, 3);
+      return ["pdf", "txt"].includes(ext) ? format + "." + ext : format;
+    });
     for (let url of this.downloadUrls) {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`Unexpected response ${response.statusText}`);
-      const fileName = this.fileName.split(".").slice(0,-1).concat([extensions.shift()]).join(".");
+      const fileName = this.fileName.split(".").slice(0, -1).concat([extensions.shift()]).join(".");
       const targetPath = path.join(targetDir, fileName);
       this.emitter.emit(AbbyyOcr.event.downloading, fileName);
       await streamPipeline(response.body, createWriteStream(targetPath));
