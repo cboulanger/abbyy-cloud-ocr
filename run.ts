@@ -15,7 +15,10 @@ const Gauge = require('gauge');
     serviceUrl?: string,
     appId?: string,
     password?: string,
-    filenames?: boolean
+    filenames?: boolean,
+    finished?: boolean,
+    json?: boolean,
+    raw?: boolean
   };
 
   // process command
@@ -25,14 +28,17 @@ const Gauge = require('gauge');
     .option("-l, --language <language>", "Recognition language or comma-separated list of languages, defaults to \"English\"")
     .option("-e, --export-format <format>", "Output format. One of: txt (default), txtUnstructured, rtf, docx, xlsx, pptx, pdfa, pdfSearchable, pdfTextAndImages, xml")
     .option("-c, --custom-options <options>", "Other custom options passed to REST-ful call,  like 'profile=documentArchiving'")
-    .option("-o, --output-path <path>", "The path to which to save the processed files'")
+    .option("-o, --output-path <path>", "The path to which to save the processed files")
     .option("-F, --filenames", "Output the filenames of the processed and downloaded files")
     .action(processFiles);
 
   // list command
   program
     .command("list")
-    .description("List ongoing or finished tasks")
+    .description("List ongoing or finished tasks. By default, this outputs a list of available statuses and the number of documents with that status.")
+    .option("-r, --raw", "Return the response of the 'listTask' (or 'listFinishedTasks' in case of --finished). Implied --json.")
+    .option("-f, --finished", "Only list finished tasks")
+    .option("-j, --json", "Return json")
     .action(list);
 
   // general options
@@ -74,10 +80,14 @@ const Gauge = require('gauge');
     }
   }
 
+  /**
+   * TODO implement
+   * @param options
+   */
   async function list(options: OptionsType) {
     const ocr = getClient(options);
-    console.log(
-      (await ocr.listTasks())
+    //const result = await (options.finished ? ocr.listFinishedTasks() : ocr.listTasks());
+    console.log((await ocr.listTasks())
         .tasks
         .reduce((s : any, t) => {
           s[t.status] = s[t.status] ? s[t.status]+1 : 1
