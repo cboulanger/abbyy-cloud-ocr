@@ -29,6 +29,7 @@
   "author": "Christian Boulanger (@cboulanger) infoy@bibliograph.org",
   "license": "ISC",
   "dependencies": {
+    "@types/node-fetch": "^2.5.10",
     "commander": "^7.2.0",
     "node-fetch": "^2.6.1",
     "xml2js": "^0.4.23"

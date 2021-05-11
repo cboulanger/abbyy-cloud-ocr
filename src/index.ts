@@ -117,10 +117,14 @@ export class AbbyyOcr {
       headers: {"Authorization": `Basic ${auth}`},
       body
     };
-    let result;
+    let response;
     try {
-      result = await fetch(url, options);
-      return await result.json();
+      response = await fetch(url, options);
+      if (response.status !== 200) {
+        const error = new Error(`${response.status} ${response.statusText} @ ${response.url}`);
+        throw error;
+      }
+      return await response.json();
     } catch (e) {
       // todo, see https://support.abbyy.com/hc/en-us/articles/360017326719-HTTP-status-codes-and-response-formats
       throw e;
