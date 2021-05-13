@@ -10,6 +10,7 @@
     "prepublishOnly": "npm install && npm run tsc",
     "publish-patch": "npm run tsc && npm version patch && npm publish --access public",
     "publish-minor": "npm run tsc && npm version minor && npm publish --access public",
+    "publish-major": "npm run tsc && npm version major && npm publish --access public",
     "postversion": "git push --follow-tags",
     "pkg": "tsc run.ts --esModuleInterop && npx pkg ."
   },
