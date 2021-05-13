@@ -120,14 +120,13 @@ export class AbbyyOcr {
     let response;
     try {
       response = await fetch(url, options);
-      if (response.status !== 200) {
-        const error = new Error(`${response.status} ${response.statusText} @ ${response.url}`);
-        throw error;
-      }
       return await response.json();
     } catch (e) {
-      // todo, see https://support.abbyy.com/hc/en-us/articles/360017326719-HTTP-status-codes-and-response-formats
-      throw e;
+      // see https://support.abbyy.com/hc/en-us/articles/360017326719-HTTP-status-codes-and-response-formats
+      if (e.error !== undefined) {
+        throw e.error;
+      }
+      throw new Error(`${response.status} ${response.statusText} @ ${response.url}`);
     }
   }
 

@@ -1,12 +1,16 @@
 # Abbyy Cloud OCR client
 
-This project implements a NodeJS client for the Abbyy Cloud OCR service. It builds on the JavaScript client provided
-here: https://github.com/abbyy/ocrsdk.com
+This project provides a NodeJS client with TypeScript support and a command line interface (CLI) for the Abbyy Cloud OCR
+service (https://cloud.ocrsdk.com/). It currently implements a subset of the available API methods from the [v1 and v2
+web API](https://support.abbyy.com/hc/en-us/sections/360004699840-API-reference):
 
+- processDocument 
+- listTask/listFinishedTasks
+- getApplicationInfo 
 
 ## Installation
 
-To use the library in your projects, simply `npm install @cboulanger/abbyy-cloud-ocr`. See [the test script](run.ts) 
+To use the library in your projects, simply `npm install @cboulanger/abbyy-cloud-ocr`. See [the CLI script](run.ts) 
 for an example on how to use the API.
 
 ## Testing
@@ -22,8 +26,8 @@ npm test
 
 ## Creating an executable
 
-You can create a standalone executable file which can be run on the command line by executing `npm run pkg`. The
-executables for Linux/Windows/MacOS will be written to the `bin` directory.
+You can create a standalone command line executable file which can be run on the command line by executing `npm run
+pkg`. The executables for Linux/Windows/MacOS will be written to the `bin` directory.
 
 > Please note that if you have set environment variables in a `.env` file, the package 
 > include them and will be visible as plain text in the source! Please remove the file if you intend 
@@ -33,7 +37,7 @@ executables for Linux/Windows/MacOS will be written to the `bin` directory.
 The usage of the executable is
 
 ```bash
-Usage: abbyy-cloud-ocr-<platform> 
+Usage: abbyy-cloud-ocr-<platform> --help
 
 Options:
   -u, --service-url <url>       The http endpoint of the Cloud OCR Service
@@ -48,7 +52,6 @@ Commands:
   help [command]                display help for command
 ```
 
-
 ```bash
 abbyy-cloud-ocr-<platform> process [options] file1 [file2 [file3]...] 
 Process the given files and download the results
@@ -60,7 +63,6 @@ Options:
   -o, --output-path <path>        The path to which to save the processed files
   -F, --filenames                 Output the filenames of the processed and downloaded files
   -h, --help                      display help for command
-
 
 ```
 
