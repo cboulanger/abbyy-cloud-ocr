@@ -141,12 +141,12 @@ export class AbbyyOcr {
 
   /**
    * Uploads a document to the Abbyy OCR service and processes them.
-   * @param {String} filePath
+   * @param {String | Buffer} filePath
    */
-  async process(filePath: string, settings?: typeof ProcessingSettings): Promise<void> {
+  async process(filePath: string | Buffer, settings?: typeof ProcessingSettings): Promise<void> {
     this.settings = settings || new ProcessingSettings();
-    this.fileName = path.basename(filePath);
-    this.emitter.emit(AbbyyOcr.event.uploading, this.fileName);
+    // this.fileName = path.basename(filePath);
+    // this.emitter.emit(AbbyyOcr.event.uploading, this.fileName);
     let taskData: typeof TaskData = await new Promise(((resolve, reject) => {
       this.ocrsdk.processImage(filePath, this.settings, (error: Error | null, taskData: typeof TaskData) => {
         if (error) {
@@ -157,7 +157,7 @@ export class AbbyyOcr {
         resolve(taskData);
       });
     }));
-    this.emitter.emit(AbbyyOcr.event.processing, this.fileName);
+    // this.emitter.emit(AbbyyOcr.event.processing, this.fileName);
     taskData = await new Promise(((resolve, reject) => {
       this.ocrsdk.waitForCompletion(taskData.id, (error: Error | null, taskData: typeof TaskData) => {
         if (error) {

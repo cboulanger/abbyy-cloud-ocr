@@ -87,21 +87,23 @@ class Ocrsdk {
   /**
    * Upload file to server and start processing.
    *
-   * @param {string} filePath          Path to the file to be processed.
+   * @param {string | Buffer} filePath          Path to the file to be processed.
    * @param {ProcessingSettings} [settings]    Image processing settings.
    * @param {function(error: Error, taskData: TaskData)} userCallback The callback function.
    */
   processImage(filePath, settings, userCallback) {
-    if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
-      userCallback(new Error("File " + filePath + " doesn't exist"), null);
-      return;
+    
+    let fileContents;
+    if (typeof filePath === 'string') {
+      fileContents = fs.readFileSync(filePath);
     }
+    else fileContents = filePath;
     if (settings == null) {
       settings = new ProcessingSettings();
     }
     let urlOptions = settings.asUrlParams();
     let req = this._createTaskRequest('POST', '/processImage' + urlOptions, userCallback);
-    let fileContents = fs.readFileSync(filePath);
+
     req.write(fileContents);
     req.end();
   }
