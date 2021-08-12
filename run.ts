@@ -18,7 +18,8 @@ const Gauge = require('gauge');
     filenames?: boolean,
     finished?: boolean,
     summary?: boolean,
-    quiet?:boolean
+    quiet?:boolean,
+    debug?:boolean
   };
 
   // authentication options
@@ -39,6 +40,7 @@ const Gauge = require('gauge');
     .option("-o, --output-path <path>", "The path to which to save the processed files")
     .option("-F, --filenames", "Output the filenames of the processed and downloaded files")
     .option("-q, --quiet", "No messages or visual feedback except errors")
+    .option("-d, --debug", "Output additional debug messages")
     .action(processFiles));
 
   // list
@@ -82,12 +84,17 @@ const Gauge = require('gauge');
    * @param options
    */
   async function processFiles(files : string[], options: OptionsType) : Promise<void>{
-    const ocr = createClient(options);
+    const abbyyClient = createClient(options);
+    if (options.debug) {
+      abbyyClient.emitter.on(AbbyyOcr.event.uploading, filename => console.log(`>>> Uploading ${filename}`));
+      abbyyClient.emitter.on(AbbyyOcr.event.processing, filename => console.log(`>>> Processing ${filename}`));
+      abbyyClient.emitter.on(AbbyyOcr.event.downloading, filename => console.log(`>>> Downloading ${filename}`));
+    }
     const settings = new ProcessingSettings(options.language, options.exportFormat, options.customOptions);
     for (let filePath of files) {
       options.quiet || options.filenames || console.log("Processing " + filePath);
-      await ocr.process(filePath, settings);
-      for await (const processedFilePath of ocr.downloadResult(options.outputPath) ) {
+      await abbyyClient.process(filePath, settings);
+      for await (const processedFilePath of abbyyClient.downloadResult(options.outputPath) ) {
         options.quiet || console.info( (options.filenames ? "" : "Downloaded ") + processedFilePath);
       }
     }

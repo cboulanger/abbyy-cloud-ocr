@@ -6,6 +6,7 @@
   "bin": "run.js",
   "scripts": {
     "test": "tsc run.ts && diff test/test.txt -bB $(ts-node run.ts process -F -l German -e txt test/test.pdf)",
+    "test-debug": "tsc run.ts && ts-node run.ts process -F -l German -d -e txtUnstructured,pdfa,docx test/test.pdf",
     "tsc": "tsc -d",
     "prepublishOnly": "npm install && npm run tsc",
     "publish-patch": "npm run tsc && npm version patch && npm publish --access public",

@@ -221,7 +221,7 @@ export class AbbyyOcr {
     targetDir = targetDir || tmpdir();
     const extensions = this.settings.exportFormat.split(",").map((format: string): string => {
       const ext = format.slice(0, 3);
-      return ["pdf", "txt"].includes(ext) ? format + "." + ext : format;
+      return ["pdf", "txt"].includes(ext) && format.length > 3 ? format + "." + ext : format;
     });
     for (let url of this.downloadUrls) {
       const response = await fetch(url);
