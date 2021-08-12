@@ -1,5 +1,5 @@
 import {AbbyyOcr, ProcessingSettings} from './src/index';
-import {program} from 'commander';
+import {Command, program} from 'commander';
 
 const process = require('process');
 const dotenv = require('dotenv');
@@ -17,11 +17,20 @@ const Gauge = require('gauge');
     outputPath?: string,
     filenames?: boolean,
     finished?: boolean,
-    summary?: boolean
+    summary?: boolean,
+    quiet?:boolean
   };
 
+  // authentication options
+  function addAuthOptions(command: typeof program) {
+    command
+      .option("-u, --service-url <url>", "The http endpoint of the Cloud OCR Service")
+      .option("-i, --app-id <id>", "The id of the application")
+      .option("-P, --password <password>", "The application password");
+  }
+
   // process
-  program
+  addAuthOptions(program
     .command("process <files...>")
     .description("Process the given files and download the results")
     .option("-l, --language <language>", "Recognition language or comma-separated list of languages, defaults to \"English\"")
@@ -29,27 +38,30 @@ const Gauge = require('gauge');
     .option("-c, --custom-options <options>", "Other custom options passed to REST-ful call,  like 'profile=documentArchiving'")
     .option("-o, --output-path <path>", "The path to which to save the processed files")
     .option("-F, --filenames", "Output the filenames of the processed and downloaded files")
-    .action(processFiles);
+    .option("-q, --quiet", "No messages or visual feedback except errors")
+    .action(processFiles));
 
   // list
-  program
+  addAuthOptions(program
     .command("list")
     .description("List ongoing or finished tasks.")
     .option("-S, --summary", "Return a summary (count) of current statuses.")
     .option("-f, --finished", "Only list finished tasks")
-    .action(list);
+    .action(list));
 
   // info
-  program.command("info").action(info)
+  addAuthOptions(program.command("info").action(info));
 
-  // general options
-  program
-    .option("-u, --service-url <url>", "The http endpoint of the Cloud OCR Service")
-    .option("-i, --app-id <id>", "The id of the application")
-    .option("-P, --password <password>", "The application password")
-
-  // parse and start caommand!
-  await program.parseAsync();
+  try {
+    await program.parseAsync();
+  } catch (e) {
+    if (e.message.match(/^[0-9]{3} /) || typeof e.details != "undefined" ) {
+      // HTTP Error Response or Abbyy Error Response
+      console.error(e.message);
+      process.exit(1);
+    }
+    throw e;
+  }
 
   /**
    * Sets up and returns the OCR client
@@ -73,10 +85,10 @@ const Gauge = require('gauge');
     const ocr = createClient(options);
     const settings = new ProcessingSettings(options.language, options.exportFormat, options.customOptions);
     for (let filePath of files) {
-      options.filenames || console.log("Processing " + filePath);
+      options.quiet || options.filenames || console.log("Processing " + filePath);
       await ocr.process(filePath, settings);
       for await (const processedFilePath of ocr.downloadResult(options.outputPath) ) {
-        console.info( (options.filenames ? "" : "Downloaded ") + processedFilePath);
+        options.quiet || console.info( (options.filenames ? "" : "Downloaded ") + processedFilePath);
       }
     }
   }

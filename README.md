@@ -68,3 +68,25 @@ Options:
 
 Note that if you don't compile in your `.env` file, you need to set the environment variables defined therein
 before calling the executable (or provide them on the command line).
+
+The executable lets you do something like this:
+
+````bash
+# export credentials so that you don't need to provide them as CLI options 
+export ABBYY_SERVICE_URL=XXXX
+export ABBYY_APP_ID=YYYYYY
+export ABBYY_APP_PASSWD=ZZZZZ
+
+PAGES_BEFORE=$(abbyy-cloud-ocr info | jq ".pages")
+
+abbyy-cloud-ocr process \
+        -l German \
+        -e docx,txtUnstructured \
+        -c "txtUnstructured:paragraphAsOneLine=true" \
+        -o ~/files/OCR \
+        ~/files/PDF-SOURCE/*
+
+PAGES_AFTER=$(abbyy-cloud-ocr info | jq ".pages")
+
+echo "$(expr $PAGES_BEFORE - $PAGES_AFTER) pages used, $PAGES_AFTER left."
+````
