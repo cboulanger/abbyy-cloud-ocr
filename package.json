@@ -1,6 +1,6 @@
 {
   "name": "@cboulanger/abbyy-cloud-ocr",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "NodeJS client and CLI to interact with the ABBYY Cloud OCR service  ",
   "main": "src/index.js",
   "bin": "run.js",
